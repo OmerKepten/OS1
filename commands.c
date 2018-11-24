@@ -10,6 +10,7 @@
 //**************************************************************************************
 int ExeCmd(pJob* jobs, char* lineSize, char* cmdString)
 {
+	//printf ("start execmd\n");
 	char* cmd; 
 	char* args[MAX_ARG];
 	char pwd[MAX_LINE_SIZE];
@@ -142,30 +143,6 @@ int ExeCmd(pJob* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "kill"))
 	{
-		if (num_arg != 2){
-			illegal_cmd = TRUE;
-		}
-
-		else{
-			char* signal = malloc(sizeof(args[1])); //no need for +1 because cutting short in next command
-			strcpy(signal,args[1]+1); //need to make sure no /n for atoi and that starts without "-"
-			printf("OMER CHECK got %s",signal); //omer check
-
-			for (int i = 0; i < job_index; i++){
-				int PID = returnPID(jobs[i]);
-				if (PID==args[2]){
-					int res = kill(args[2], atoi(signal);
-					printf("signal %s was sent to pid %d",signal,PID);
-					if (!res){
-						printf("smash error: > kill \"%s\" - cannot send signal\n", args[2]);
-					}
-					break;
-				}
-
-			}
-			if (i==job_index) printf("smash error: > kill \"%s\" - job does not exist\n",args[2]); //did not find job
-			free(signal);
-		}
 
 	}
 
@@ -199,33 +176,12 @@ int ExeCmd(pJob* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "quit"))
 	{
-   		if (num_arg>1)
-   			illegal_cmd=TRUE;
-   		else{
-   			if (num_arg==1 && !strcmp(args[1],"kill")) { //first kill all processes
-				for (int i=0;i<job_index;i++){
-					int PID =  returnPID(jobs[i]);
-					kill(PID,SIGTERM);
-					printf("signal SIGTERM was sent to pid %d",PID);
-					for (int i=0;i<5;i++){
-						if (waitpid(PID,NULL,WNOHANG)!=0) //terminated!
-							break;
-						else sleep(1);
-					}
-					if (i==5){ //pid not terminated after 5 seconds
-						kill(PID,SIGKILL) //force sigkill
-					}
-
-				}
-   			}
-   			//done killing children if requested. now:
-			printf("signal SIGTERM was sent to pid %d",getpid());
-   			kill(getpid(),SIGKILL) //kill current process;
-   		}
+   		
 	} 
 	/*************************************************/
 	else // external command
 	{
+		//printf("try to run external command\n");
  		ExeExternal(args, cmdString);
 	 	return 0;
 	}
@@ -246,17 +202,19 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString)
 {
 	int pid;
 	pid = fork();
+	//printf("new pid: %d\n", pid);
 	//son has created, now we will execute the command in the background
 	if (pid == 0) {
 		setpgrp(); //change the group-ID
+		//printf("args[0]: %s\n", args[0]);
 		execv(args[0], args);
-		perror("");
+		perror("execv error: ");
 		exit(-1);
 	}
-	//parent- the shell. we will wait until the program is executed
+	//parent- the shell. will wait until the program is executed
 	if (pid > 0) {
 		wait(NULL);
-		perror("");
+		perror("wait: ");
 		return;
 	}
 	//fork failed
@@ -289,6 +247,7 @@ int ExeComp(char* lineSize)
 // Returns: 0- BG command -1- if not
 //**************************************************************************************
 int BgCmd(char* lineSize, pJob* jobs) {
+	//printf("start bgCmd\n");
 	int pid;
 	char *Command;
 	char *delimiters = " \t\n";
@@ -309,6 +268,7 @@ int BgCmd(char* lineSize, pJob* jobs) {
 		pid = fork();
 		//son has created, now we will execute the command in the background
 		if (pid == 0) {
+			printf("start bg son");
 			setpgrp(); //change the group-ID
 			execv(args[0], args);
 			perror("");
@@ -317,7 +277,12 @@ int BgCmd(char* lineSize, pJob* jobs) {
 		//parent- the shell. we will insert the son to the jobs array
 		if (pid > 0) {
 			time_t cur_time = time(NULL);
+			//printf("job_index: %d\n", job_index);
+			//printf("pid = %d\n", pid);
+			//printf("curr time: %d\n", (double)cur_time);
+			//printf("command: %s\n", Command);
 			pJob newJob = NewJob(job_index + 1, pid, cur_time, Command);
+			//printJob(newJob);
 			jobs[job_index] = newJob;
 			job_index++;
 			return 0;
