@@ -6,6 +6,7 @@
 #include <time.h>
 #include "job.h"
 
+
 typedef struct Job{
     int number;
     int pID;
@@ -22,16 +23,22 @@ pJob NewJob(int number, int pID, time_t start, char* name){
     j->pID = pID;
     j->start_time = start;
     strcpy(j->process_name, name);
+    return j;
 }
 
-void deleteJob(pJob job){
-    free(job);
+int getPID (pJob j){
+    return j->pID;
+}
+
+void setIdx(pJob j, int new_idx){
+    j->number = new_idx;
+}
+
+void deleteJob(pJob j){
+    free(j);
 }
 
 void printJob (pJob j){
-    printf("[%d] %s : %d %d secs", j->number, j->process_name, j->pID, (int)difftime(time(NULL), j->start_time));
+    printf("[%d] %s : %d %d secs\n", j->number, j->process_name, j->pID, (int)difftime(time(NULL), j->start_time));
 }
 
-int returnPID(pJob job){
-    return job->pID;
-}

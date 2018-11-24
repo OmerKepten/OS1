@@ -12,7 +12,8 @@
 
 typedef struct Job *pJob;
 pJob NewJob(int number, int pID, time_t start, char* name);
-void deleteJob(pJob job);
+void deleteJob(pJob j);
 void printJob(pJob j);
-int returnPID(pJob job)
+int getPID (pJob j);
+void setIdx(pJob j, int new_idx);
 #endif //SMASH_JOB_H
